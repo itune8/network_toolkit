@@ -44,3 +44,13 @@ def resolve_dns(domain, record_type="A", timeout=5):
     except Exception as e:
         return {"domain": domain, "type": record_type, "status": "error",
                 "error": str(e)}
+
+
+def full_dns_report(domain):
+    """Get all available DNS records for a domain."""
+    results = {}
+    for rtype in RECORD_TYPES:
+        result = resolve_dns(domain, rtype)
+        if result["status"] == "success":
+            results[rtype] = result
+    return results
