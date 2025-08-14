@@ -54,3 +54,14 @@ def full_dns_report(domain):
         if result["status"] == "success":
             results[rtype] = result
     return results
+
+
+def reverse_lookup(ip):
+    """Perform reverse DNS lookup."""
+    try:
+        hostname, _, _ = socket.gethostbyaddr(ip)
+        return {"ip": ip, "hostname": hostname, "status": "success"}
+    except socket.herror:
+        return {"ip": ip, "status": "error", "error": "No PTR record found"}
+    except Exception as e:
+        return {"ip": ip, "status": "error", "error": str(e)}
