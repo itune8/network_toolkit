@@ -65,3 +65,42 @@ def reverse_lookup(ip):
         return {"ip": ip, "status": "error", "error": "No PTR record found"}
     except Exception as e:
         return {"ip": ip, "status": "error", "error": str(e)}
+
+
+def compare_dns_servers(domain, servers=None):
+    """Compare DNS resolution across multiple DNS servers."""
+    if servers is None:
+        servers = {
+            "Google": "8.8.8.8",
+            "Cloudflare": "1.1.1.1",
+            "Quad9": "9.9.9.9",
+            "OpenDNS": "208.67.222.222",
+        }
+
+    results = {}
+    for name, server_ip in servers.items():
+        try:
+            resolver = dns.resolver.Resolver()
+            resolver.nameservers = [server_ip]
+            resolver.timeout = 5
+            resolver.lifetime = 5
+
+            start = time.time()
+            answers = resolver.resolve(domain, "A")
+            elapsed = (time.time() - start) * 1000
+
+            results[name] = {
+                "server": server_ip,
+                "ips": [str(r) for r in answers],
+                "response_time_ms": round(elapsed, 2),
+                "status": "success",
+            }
+        except Exception as e:
+            results[name] = {
+                "server": server_ip,
+                "status": "error",
+                "error": str(e),
+                "response_time_ms": None,
+            }
+
+    return results
