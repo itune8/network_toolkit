@@ -4,7 +4,7 @@ import socket
 import time
 import dns.resolver
 
-RECORD_TYPES = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"]
+RECORD_TYPES = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA", "SRV", "PTR", "CAA"]
 
 
 def resolve_dns(domain, record_type="A", timeout=5):
