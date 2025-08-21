@@ -3,6 +3,7 @@
 import socket
 import time
 import dns.resolver
+import dns.reversename
 
 RECORD_TYPES = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA", "SRV", "PTR", "CAA"]
 
