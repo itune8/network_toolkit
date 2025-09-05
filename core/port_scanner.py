@@ -10,3 +10,28 @@ COMMON_PORTS = {
     5432: "PostgreSQL", 5900: "VNC", 6379: "Redis", 8080: "HTTP-Alt",
     8443: "HTTPS-Alt", 27017: "MongoDB",
 }
+
+
+def scan_port(host, port, timeout=1.5):
+    """Scan a single TCP port."""
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        start = time.time()
+        result = sock.connect_ex((host, port))
+        elapsed = (time.time() - start) * 1000
+        sock.close()
+
+        if result == 0:
+            service = COMMON_PORTS.get(port, "Unknown")
+            return {
+                "port": port,
+                "state": "open",
+                "service": service,
+                "response_ms": round(elapsed, 2),
+            }
+        return {"port": port, "state": "closed"}
+    except socket.timeout:
+        return {"port": port, "state": "filtered"}
+    except Exception:
+        return {"port": port, "state": "error"}
