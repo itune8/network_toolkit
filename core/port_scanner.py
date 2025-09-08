@@ -24,10 +24,12 @@ def scan_port(host, port, timeout=1.5):
 
         if result == 0:
             service = COMMON_PORTS.get(port, "Unknown")
+            banner = grab_banner(host, port, timeout)
             return {
                 "port": port,
                 "state": "open",
                 "service": service,
+                "banner": banner,
                 "response_ms": round(elapsed, 2),
             }
         return {"port": port, "state": "closed"}
@@ -35,3 +37,22 @@ def scan_port(host, port, timeout=1.5):
         return {"port": port, "state": "filtered"}
     except Exception:
         return {"port": port, "state": "error"}
+
+
+def grab_banner(host, port, timeout=2):
+    """Attempt to grab service banner from an open port."""
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        sock.connect((host, port))
+
+        if port in (80, 8080, 8000, 8443):
+            sock.send(b"HEAD / HTTP/1.1\r\nHost: " + host.encode() + b"\r\n\r\n")
+        else:
+            sock.send(b"\r\n")
+
+        banner = sock.recv(1024).decode("utf-8", errors="ignore").strip()
+        sock.close()
+        return banner[:200] if banner else None
+    except Exception:
+        return None
