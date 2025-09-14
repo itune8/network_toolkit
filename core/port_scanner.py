@@ -12,6 +12,17 @@ COMMON_PORTS = {
     8443: "HTTPS-Alt", 27017: "MongoDB",
 }
 
+WELL_KNOWN_PORTS = list(range(1, 1025))
+TOP_100_PORTS = [
+    21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 993,
+    995, 1723, 3306, 3389, 5432, 5900, 8080, 8443, 8888, 9090, 27017,
+    1433, 1521, 2049, 2082, 2083, 2086, 2087, 3000, 4443, 5000, 5001,
+    5060, 5061, 5222, 5269, 5432, 5984, 6379, 6667, 7001, 7002, 8000,
+    8008, 8081, 8082, 8083, 8084, 8085, 8086, 8087, 8088, 8089, 8090,
+    8180, 8443, 8880, 8888, 9000, 9090, 9200, 9300, 10000, 10443,
+    11211, 27017, 27018, 28017, 50000, 50070,
+]
+
 
 def scan_port(host, port, timeout=1.5):
     """Scan a single TCP port."""
@@ -93,3 +104,12 @@ def scan_ports(host, ports=None, max_workers=50, timeout=1.5, progress_callback=
         "results": results,
         "open_ports": open_ports,
     }
+
+
+def resolve_host(host):
+    """Resolve hostname to IP address."""
+    try:
+        ip = socket.gethostbyname(host)
+        return ip
+    except socket.gaierror:
+        return None
