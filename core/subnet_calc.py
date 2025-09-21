@@ -30,3 +30,18 @@ def calculate_subnet(cidr):
         }
     except ValueError as e:
         return {"status": "error", "error": str(e)}
+
+
+def check_ip_in_subnet(ip, cidr):
+    """Check if an IP address belongs to a subnet."""
+    try:
+        address = ipaddress.ip_address(ip)
+        network = ipaddress.ip_network(cidr, strict=False)
+        return {
+            "ip": ip,
+            "subnet": str(network),
+            "belongs": address in network,
+            "status": "success",
+        }
+    except ValueError as e:
+        return {"status": "error", "error": str(e)}
