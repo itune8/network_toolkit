@@ -45,3 +45,25 @@ def check_ip_in_subnet(ip, cidr):
         }
     except ValueError as e:
         return {"status": "error", "error": str(e)}
+
+
+def get_ip_info(ip):
+    """Get information about an IP address."""
+    try:
+        addr = ipaddress.ip_address(ip)
+        return {
+            "ip": str(addr),
+            "version": addr.version,
+            "is_private": addr.is_private,
+            "is_global": addr.is_global,
+            "is_loopback": addr.is_loopback,
+            "is_multicast": addr.is_multicast,
+            "is_reserved": addr.is_reserved,
+            "is_link_local": addr.is_link_local,
+            "reverse_pointer": addr.reverse_pointer,
+            "packed": addr.packed.hex(),
+            "binary": format(int(addr), f"0{addr.max_prefixlen}b"),
+            "status": "success",
+        }
+    except ValueError as e:
+        return {"status": "error", "error": str(e)}
