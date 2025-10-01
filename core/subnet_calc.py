@@ -67,3 +67,31 @@ def get_ip_info(ip):
         }
     except ValueError as e:
         return {"status": "error", "error": str(e)}
+
+
+def split_subnet(cidr, new_prefix):
+    """Split a subnet into smaller subnets."""
+    try:
+        network = ipaddress.ip_network(cidr, strict=False)
+        if new_prefix <= network.prefixlen:
+            return {"status": "error",
+                    "error": "New prefix must be larger than current prefix"}
+
+        subnets = list(network.subnets(new_prefix=new_prefix))
+        return {
+            "original": str(network),
+            "new_prefix": new_prefix,
+            "num_subnets": len(subnets),
+            "subnets": [
+                {
+                    "network": str(s.network_address),
+                    "cidr": str(s),
+                    "broadcast": str(s.broadcast_address),
+                    "usable_hosts": max(0, s.num_addresses - 2),
+                }
+                for s in subnets[:50]
+            ],
+            "status": "success",
+        }
+    except ValueError as e:
+        return {"status": "error", "error": str(e)}
