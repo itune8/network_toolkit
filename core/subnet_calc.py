@@ -95,3 +95,22 @@ def split_subnet(cidr, new_prefix):
         }
     except ValueError as e:
         return {"status": "error", "error": str(e)}
+
+
+def supernet(cidr, new_prefix):
+    """Find the supernet for a given subnet."""
+    try:
+        network = ipaddress.ip_network(cidr, strict=False)
+        if new_prefix >= network.prefixlen:
+            return {"status": "error",
+                    "error": "New prefix must be smaller than current prefix"}
+
+        super_net = network.supernet(new_prefix=new_prefix)
+        return {
+            "original": str(network),
+            "supernet": str(super_net),
+            "new_prefix": new_prefix,
+            "status": "success",
+        }
+    except ValueError as e:
+        return {"status": "error", "error": str(e)}
