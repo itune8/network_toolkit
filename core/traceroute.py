@@ -114,3 +114,59 @@ def _tcp_probe(dest_ip, ttl, timeout):
                 "reached": False}
     finally:
         sock.close()
+
+
+def ping(host, count=4, timeout=2):
+    """Simple connectivity check using TCP connect to port 80/443."""
+    try:
+        ip = socket.gethostbyname(host)
+    except socket.gaierror:
+        return {"status": "error", "error": f"Cannot resolve: {host}"}
+
+    results = []
+    for port in [80, 443]:
+        rtts = []
+        for _ in range(count):
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(timeout)
+            start = time.time()
+            try:
+                sock.connect((ip, port))
+                elapsed = (time.time() - start) * 1000
+                rtts.append(round(elapsed, 2))
+                sock.close()
+            except (socket.timeout, OSError):
+                rtts.append(None)
+            finally:
+                sock.close()
+
+        successful = [r for r in rtts if r is not None]
+        if successful:
+            results.append({
+                "port": port,
+                "sent": count,
+                "received": len(successful),
+                "lost": count - len(successful),
+                "min_ms": round(min(successful), 2),
+                "max_ms": round(max(successful), 2),
+                "avg_ms": round(sum(successful) / len(successful), 2),
+                "rtts": rtts,
+            })
+
+    if not results:
+        return {"host": host, "ip": ip, "status": "unreachable"}
+
+    best = min(results, key=lambda r: r["avg_ms"])
+    return {
+        "host": host,
+        "ip": ip,
+        "status": "reachable",
+        "port": best["port"],
+        "sent": best["sent"],
+        "received": best["received"],
+        "packet_loss": f"{(best['lost'] / best['sent']) * 100:.0f}%",
+        "min_ms": best["min_ms"],
+        "max_ms": best["max_ms"],
+        "avg_ms": best["avg_ms"],
+        "rtts": best["rtts"],
+    }
