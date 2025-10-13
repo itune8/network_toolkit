@@ -48,6 +48,9 @@ def check_endpoint(url, timeout=10):
     except requests.exceptions.Timeout:
         result["status"] = "timeout"
         result["error"] = f"Request timed out after {timeout}s"
+    except requests.exceptions.SSLError as e:
+        result["status"] = "ssl_error"
+        result["error"] = f"SSL error: {str(e)[:100]}"
     except Exception as e:
         result["status"] = "error"
         result["error"] = str(e)[:200]
