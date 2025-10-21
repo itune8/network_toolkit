@@ -85,3 +85,12 @@ def check_ssl(hostname, port=443):
                 }
     except Exception as e:
         return {"valid": False, "error": str(e)[:200]}
+
+
+def check_multiple_endpoints(urls, timeout=10):
+    """Check multiple endpoints and return results."""
+    results = []
+    for url in urls:
+        result = check_endpoint(url, timeout)
+        results.append(result)
+    return results
