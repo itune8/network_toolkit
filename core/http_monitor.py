@@ -94,3 +94,59 @@ def check_multiple_endpoints(urls, timeout=10):
         result = check_endpoint(url, timeout)
         results.append(result)
     return results
+
+
+def get_response_headers_analysis(headers):
+    """Analyze response headers for security best practices."""
+    security_headers = {
+        "Strict-Transport-Security": {
+            "present": False,
+            "description": "HSTS — forces HTTPS connections",
+            "severity": "high",
+        },
+        "Content-Security-Policy": {
+            "present": False,
+            "description": "CSP — prevents XSS and injection attacks",
+            "severity": "high",
+        },
+        "X-Content-Type-Options": {
+            "present": False,
+            "description": "Prevents MIME-type sniffing",
+            "severity": "medium",
+        },
+        "X-Frame-Options": {
+            "present": False,
+            "description": "Prevents clickjacking via iframes",
+            "severity": "medium",
+        },
+        "X-XSS-Protection": {
+            "present": False,
+            "description": "Legacy XSS filter (deprecated but still used)",
+            "severity": "low",
+        },
+        "Referrer-Policy": {
+            "present": False,
+            "description": "Controls referrer information sent with requests",
+            "severity": "low",
+        },
+        "Permissions-Policy": {
+            "present": False,
+            "description": "Controls browser feature access (camera, mic, etc.)",
+            "severity": "medium",
+        },
+    }
+
+    for header_name in security_headers:
+        if header_name.lower() in {k.lower() for k in headers}:
+            security_headers[header_name]["present"] = True
+            matched_key = next(
+                k for k in headers if k.lower() == header_name.lower()
+            )
+            security_headers[header_name]["value"] = headers[matched_key]
+
+    present_count = sum(1 for h in security_headers.values() if h["present"])
+    total = len(security_headers)
+    score = round((present_count / total) * 100)
+
+    return {"headers": security_headers, "score": score,
+            "present": present_count, "total": total}
