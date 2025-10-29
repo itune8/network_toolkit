@@ -27,3 +27,23 @@ def plot_port_scan_results(results):
         height=350,
     )
     return fig
+
+
+def plot_port_summary(results):
+    """Pie chart of port states."""
+    labels = ["Open", "Closed", "Filtered"]
+    values = [results["open"], results["closed"], results["filtered"]]
+    colors = ["#e74c3c", "#2ecc71", "#f39c12"]
+
+    fig = go.Figure(go.Pie(
+        labels=labels,
+        values=values,
+        marker_colors=colors,
+        hole=0.4,
+        textinfo="label+value",
+    ))
+    fig.update_layout(
+        margin=dict(t=30, b=30, l=30, r=30),
+        height=300,
+    )
+    return fig
