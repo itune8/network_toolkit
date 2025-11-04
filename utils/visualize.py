@@ -47,3 +47,28 @@ def plot_port_summary(results):
         height=300,
     )
     return fig
+
+
+def plot_dns_comparison(comparison):
+    """Bar chart comparing DNS server response times."""
+    servers = list(comparison.keys())
+    times = [
+        comparison[s].get("response_time_ms", 0)
+        for s in servers
+    ]
+    colors = ["#3498db", "#e74c3c", "#2ecc71", "#f39c12"]
+
+    fig = go.Figure(go.Bar(
+        x=servers,
+        y=times,
+        marker_color=colors[:len(servers)],
+        text=[f"{t:.1f}ms" if t else "N/A" for t in times],
+        textposition="outside",
+    ))
+    fig.update_layout(
+        xaxis_title="DNS Server",
+        yaxis_title="Response Time (ms)",
+        margin=dict(t=30, b=30),
+        height=300,
+    )
+    return fig
