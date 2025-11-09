@@ -72,3 +72,38 @@ def plot_dns_comparison(comparison):
         height=300,
     )
     return fig
+
+
+def plot_traceroute(hops):
+    """Visualize traceroute path with latencies."""
+    valid_hops = [h for h in hops if h["rtt_ms"] is not None]
+    if not valid_hops:
+        return None
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=list(range(1, len(hops) + 1)),
+        y=[h["rtt_ms"] if h["rtt_ms"] else 0 for h in hops],
+        mode="lines+markers",
+        marker=dict(
+            size=12,
+            color=[h["rtt_ms"] if h["rtt_ms"] else 0 for h in hops],
+            colorscale="RdYlGn_r",
+            showscale=True,
+            colorbar=dict(title="RTT (ms)"),
+        ),
+        text=[f"{h['hostname']}<br>{h['ip']}<br>{h['rtt_ms']}ms"
+              if h["rtt_ms"] else f"Hop {h['ttl']}: * (timeout)"
+              for h in hops],
+        hoverinfo="text",
+        line=dict(color="#3498db", width=2),
+    ))
+
+    fig.update_layout(
+        xaxis_title="Hop Number",
+        yaxis_title="Round Trip Time (ms)",
+        margin=dict(t=30, b=30),
+        height=350,
+    )
+    return fig
