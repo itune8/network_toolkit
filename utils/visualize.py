@@ -107,3 +107,31 @@ def plot_traceroute(hops):
         height=350,
     )
     return fig
+
+
+def plot_ping_results(ping_result):
+    """Visualize ping RTT times."""
+    rtts = ping_result.get("rtts", [])
+    if not rtts:
+        return None
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=list(range(1, len(rtts) + 1)),
+        y=[r if r else 0 for r in rtts],
+        mode="lines+markers",
+        marker=dict(size=10, color="#3498db"),
+        line=dict(color="#3498db", width=2),
+    ))
+
+    avg = ping_result.get("avg_ms", 0)
+    fig.add_hline(y=avg, line_dash="dash", line_color="red",
+                  annotation_text=f"Avg: {avg}ms")
+
+    fig.update_layout(
+        xaxis_title="Probe #",
+        yaxis_title="RTT (ms)",
+        margin=dict(t=30, b=30),
+        height=250,
+    )
+    return fig
