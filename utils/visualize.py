@@ -135,3 +135,28 @@ def plot_ping_results(ping_result):
         height=250,
     )
     return fig
+
+
+def plot_security_score(score, present, total):
+    """Gauge chart for security header score."""
+    color = "#2ecc71" if score >= 70 else "#f39c12" if score >= 40 else "#e74c3c"
+
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number+delta",
+        value=score,
+        title={"text": f"Security Headers ({present}/{total})"},
+        gauge={
+            "axis": {"range": [0, 100]},
+            "bar": {"color": color},
+            "steps": [
+                {"range": [0, 40], "color": "#fadbd8"},
+                {"range": [40, 70], "color": "#fdebd0"},
+                {"range": [70, 100], "color": "#d5f5e3"},
+            ],
+        },
+    ))
+    fig.update_layout(
+        margin=dict(t=60, b=30),
+        height=280,
+    )
+    return fig
