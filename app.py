@@ -27,7 +27,28 @@ def render_header():
 
 def main():
     render_header()
-    st.info("Tools coming soon...")
+
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "🔎 DNS Lookup",
+        "🔓 Port Scanner",
+        "🌐 HTTP Monitor",
+        "📐 Subnet Calculator",
+        "📡 Traceroute & Ping",
+    ])
+
+    with tab1:
+        st.subheader("DNS Lookup & Analysis")
+    with tab2:
+        st.subheader("Port Scanner")
+    with tab3:
+        st.subheader("HTTP Endpoint Monitor")
+    with tab4:
+        st.subheader("Subnet Calculator")
+    with tab5:
+        st.subheader("Traceroute & Ping")
+
+    st.divider()
+    st.caption("NetProbe v1.0 | Network Analysis & Monitoring Toolkit")
 
 
 if __name__ == "__main__":
