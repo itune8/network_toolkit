@@ -1,10 +1,13 @@
 """NetProbe — Network Analysis & Monitoring Toolkit."""
 
 import streamlit as st
+import pandas as pd
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from core.dns_analyzer import resolve_dns, full_dns_report, reverse_lookup, compare_dns_servers, RECORD_TYPES
 
 st.set_page_config(
     page_title="NetProbe",
@@ -25,6 +28,31 @@ def render_header():
     """, unsafe_allow_html=True)
 
 
+def render_dns_tab():
+    st.subheader("DNS Lookup & Analysis")
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        domain = st.text_input("Domain", "google.com", key="dns_domain")
+    with col2:
+        mode = st.selectbox("Mode", ["Single Record", "Full Report", "Compare DNS Servers", "Reverse Lookup"])
+
+    if mode == "Single Record":
+        record_type = st.selectbox("Record Type", RECORD_TYPES)
+        if st.button("Lookup", type="primary", key="dns_lookup"):
+            with st.spinner("Resolving..."):
+                result = resolve_dns(domain, record_type)
+
+            if result["status"] == "success":
+                st.success(f"Resolved in {result['response_time_ms']}ms")
+                for rec in result["records"]:
+                    cols = st.columns([3, 1])
+                    cols[0].code(rec["value"])
+                    cols[1].caption(f"TTL: {rec['ttl']}s")
+            else:
+                st.error(result["error"])
+
+
 def main():
     render_header()
 
@@ -37,7 +65,7 @@ def main():
     ])
 
     with tab1:
-        st.subheader("DNS Lookup & Analysis")
+        render_dns_tab()
     with tab2:
         st.subheader("Port Scanner")
     with tab3:
