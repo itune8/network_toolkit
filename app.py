@@ -52,6 +52,40 @@ def render_dns_tab():
             else:
                 st.error(result["error"])
 
+    elif mode == "Full Report":
+        if st.button("Get Full DNS Report", type="primary", key="dns_full"):
+            with st.spinner("Querying all record types..."):
+                report = full_dns_report(domain)
+
+            if report:
+                for rtype, result in report.items():
+                    with st.expander(f"{rtype} Records ({len(result['records'])} found)", expanded=True):
+                        for rec in result["records"]:
+                            st.code(rec["value"])
+            else:
+                st.warning("No DNS records found for this domain.")
+
+    elif mode == "Compare DNS Servers":
+        if st.button("Compare DNS Servers", type="primary", key="dns_compare"):
+            with st.spinner("Querying DNS servers..."):
+                comparison = compare_dns_servers(domain)
+
+            for name, result in comparison.items():
+                if result["status"] == "success":
+                    st.success(f"**{name}** ({result['server']}): {result['response_time_ms']}ms → {', '.join(result['ips'])}")
+                else:
+                    st.error(f"**{name}** ({result['server']}): {result.get('error', 'Failed')}")
+
+    elif mode == "Reverse Lookup":
+        ip = st.text_input("IP Address", "8.8.8.8", key="dns_reverse_ip")
+        if st.button("Reverse Lookup", type="primary", key="dns_reverse"):
+            with st.spinner("Looking up..."):
+                result = reverse_lookup(ip)
+            if result["status"] == "success":
+                st.success(f"**{ip}** → {result['hostname']}")
+            else:
+                st.error(result["error"])
+
 
 def main():
     render_header()
