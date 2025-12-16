@@ -8,6 +8,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from core.dns_analyzer import resolve_dns, full_dns_report, reverse_lookup, compare_dns_servers, RECORD_TYPES
+from utils.visualize import plot_dns_comparison
 
 st.set_page_config(
     page_title="NetProbe",
@@ -69,6 +70,9 @@ def render_dns_tab():
         if st.button("Compare DNS Servers", type="primary", key="dns_compare"):
             with st.spinner("Querying DNS servers..."):
                 comparison = compare_dns_servers(domain)
+
+            fig = plot_dns_comparison(comparison)
+            st.plotly_chart(fig, use_container_width=True)
 
             for name, result in comparison.items():
                 if result["status"] == "success":
