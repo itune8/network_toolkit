@@ -8,7 +8,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from core.dns_analyzer import resolve_dns, full_dns_report, reverse_lookup, compare_dns_servers, RECORD_TYPES
-from utils.visualize import plot_dns_comparison
+from core.port_scanner import scan_ports, resolve_host, COMMON_PORTS, TOP_100_PORTS
+from utils.visualize import plot_port_scan_results, plot_port_summary, plot_dns_comparison
 
 st.set_page_config(
     page_title="NetProbe",
@@ -91,6 +92,65 @@ def render_dns_tab():
                 st.error(result["error"])
 
 
+def render_port_scanner_tab():
+    st.subheader("Port Scanner")
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        host = st.text_input("Target Host", "scanme.nmap.org", key="port_host")
+    with col2:
+        scan_type = st.selectbox("Scan Type", [
+            "Common Ports (20)", "Top 100 Ports", "Custom Range",
+        ])
+
+    if scan_type == "Custom Range":
+        range_col1, range_col2 = st.columns(2)
+        start_port = range_col1.number_input("Start Port", 1, 65535, 1)
+        end_port = range_col2.number_input("End Port", 1, 65535, 1024)
+        ports = list(range(start_port, end_port + 1))
+    elif scan_type == "Top 100 Ports":
+        ports = TOP_100_PORTS
+    else:
+        ports = list(COMMON_PORTS.keys())
+
+    if st.button("Scan Ports", type="primary", key="port_scan"):
+        resolved = resolve_host(host)
+        if not resolved:
+            st.error(f"Cannot resolve hostname: {host}")
+            return
+
+        st.info(f"Scanning **{host}** ({resolved}) — {len(ports)} ports...")
+        progress = st.progress(0)
+
+        with st.spinner("Scanning..."):
+            results = scan_ports(host, ports, progress_callback=progress.progress)
+
+        progress.empty()
+
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Total Scanned", results["total_scanned"])
+        m2.metric("Open", results["open"], delta=None)
+        m3.metric("Closed", results["closed"])
+        m4.metric("Filtered", results["filtered"])
+
+        if results["open_ports"]:
+            st.markdown("### Open Ports")
+            df = pd.DataFrame(results["open_ports"])
+            st.dataframe(df[["port", "service", "state", "response_ms", "banner"]],
+                         use_container_width=True)
+
+            col_a, col_b = st.columns(2)
+            with col_a:
+                fig = plot_port_scan_results(results)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            with col_b:
+                fig = plot_port_summary(results)
+                st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.warning("No open ports found.")
+
+
 def main():
     render_header()
 
@@ -105,7 +165,7 @@ def main():
     with tab1:
         render_dns_tab()
     with tab2:
-        st.subheader("Port Scanner")
+        render_port_scanner_tab()
     with tab3:
         st.subheader("HTTP Endpoint Monitor")
     with tab4:
