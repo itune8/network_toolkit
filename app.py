@@ -8,8 +8,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from core.dns_analyzer import resolve_dns, full_dns_report, reverse_lookup, compare_dns_servers, RECORD_TYPES
+from core.http_monitor import check_endpoint, get_response_headers_analysis
 from core.port_scanner import scan_ports, resolve_host, COMMON_PORTS, TOP_100_PORTS
-from utils.visualize import plot_port_scan_results, plot_port_summary, plot_dns_comparison
+from utils.visualize import (
+    plot_port_scan_results, plot_port_summary, plot_dns_comparison,
+    plot_security_score,
+)
 
 st.set_page_config(
     page_title="NetProbe",
@@ -151,6 +155,79 @@ def render_port_scanner_tab():
             st.warning("No open ports found.")
 
 
+def render_http_tab():
+    st.subheader("HTTP Endpoint Monitor")
+
+    url = st.text_input("URL", "https://google.com", key="http_url")
+
+    if st.button("Check Endpoint", type="primary", key="http_check"):
+        with st.spinner("Checking..."):
+            result = check_endpoint(url)
+
+        if result["status"] == "up":
+            st.success(f"**Status:** UP — HTTP {result['status_code']} in {result['response_time_ms']}ms")
+        elif result["status"] == "down":
+            st.error(f"**Status:** DOWN — {result['error']}")
+        else:
+            st.warning(f"**Status:** {result['status'].upper()} — {result.get('error', '')}")
+
+        if result["status"] == "up":
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Response Time", f"{result['response_time_ms']}ms")
+            m2.metric("Status Code", result['status_code'])
+            m3.metric("Content Size", f"{result['content_length']:,} bytes")
+
+            tab_ssl, tab_headers, tab_security = st.tabs([
+                "SSL Certificate", "Response Headers", "Security Analysis",
+            ])
+
+            with tab_ssl:
+                ssl_info = result.get("ssl")
+                if ssl_info and ssl_info.get("valid"):
+                    st.success("SSL certificate is valid")
+                    info_df = pd.DataFrame([{
+                        "Subject": ssl_info["subject"],
+                        "Issuer": ssl_info["issuer"],
+                        "Valid From": ssl_info["not_before"],
+                        "Valid Until": ssl_info["not_after"],
+                        "Protocol": ssl_info["version"],
+                    }]).T
+                    info_df.columns = ["Value"]
+                    st.table(info_df)
+                elif ssl_info:
+                    st.error(f"SSL issue: {ssl_info.get('error', 'Unknown')}")
+                else:
+                    st.info("No SSL (HTTP connection)")
+
+            with tab_headers:
+                if result["headers"]:
+                    header_df = pd.DataFrame(
+                        list(result["headers"].items()),
+                        columns=["Header", "Value"],
+                    )
+                    st.dataframe(header_df, use_container_width=True)
+
+            with tab_security:
+                if result["headers"]:
+                    analysis = get_response_headers_analysis(result["headers"])
+                    fig = plot_security_score(
+                        analysis["score"], analysis["present"], analysis["total"],
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    for name, info in analysis["headers"].items():
+                        if info["present"]:
+                            st.success(f"**{name}** — {info['description']}")
+                        else:
+                            icon = "🔴" if info["severity"] == "high" else "🟡"
+                            st.warning(f"{icon} **{name}** missing — {info['description']}")
+
+            if result["redirects"]:
+                with st.expander("Redirect Chain"):
+                    for i, r in enumerate(result["redirects"]):
+                        st.write(f"{i + 1}. `{r['status_code']}` → {r['url']}")
+
+
 def main():
     render_header()
 
@@ -167,7 +244,7 @@ def main():
     with tab2:
         render_port_scanner_tab()
     with tab3:
-        st.subheader("HTTP Endpoint Monitor")
+        render_http_tab()
     with tab4:
         st.subheader("Subnet Calculator")
     with tab5:
