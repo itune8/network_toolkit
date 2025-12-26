@@ -8,6 +8,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from core.dns_analyzer import resolve_dns, full_dns_report, reverse_lookup, compare_dns_servers, RECORD_TYPES
+from core.subnet_calc import calculate_subnet, get_ip_info, check_ip_in_subnet, split_subnet
 from core.http_monitor import check_endpoint, get_response_headers_analysis
 from core.port_scanner import scan_ports, resolve_host, COMMON_PORTS, TOP_100_PORTS
 from utils.visualize import (
@@ -228,6 +229,93 @@ def render_http_tab():
                         st.write(f"{i + 1}. `{r['status_code']}` → {r['url']}")
 
 
+def render_subnet_tab():
+    st.subheader("Subnet Calculator")
+
+    mode = st.selectbox("Mode", ["Subnet Calculator", "IP Info", "IP in Subnet Check", "Subnet Splitter"])
+
+    if mode == "Subnet Calculator":
+        cidr = st.text_input("CIDR Notation", "192.168.1.0/24", key="subnet_cidr")
+        if st.button("Calculate", type="primary", key="subnet_calc"):
+            result = calculate_subnet(cidr)
+            if result["status"] == "success":
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown(f"""
+                    | Property | Value |
+                    |----------|-------|
+                    | **Network** | `{result['network']}` |
+                    | **Broadcast** | `{result['broadcast']}` |
+                    | **Netmask** | `{result['netmask']}` |
+                    | **Wildcard** | `{result['wildcard']}` |
+                    | **CIDR** | `{result['cidr']}` |
+                    """)
+                with col2:
+                    st.markdown(f"""
+                    | Property | Value |
+                    |----------|-------|
+                    | **Total Hosts** | `{result['total_hosts']:,}` |
+                    | **Usable Hosts** | `{result['usable_hosts']:,}` |
+                    | **First Host** | `{result['first_host']}` |
+                    | **Last Host** | `{result['last_host']}` |
+                    | **Private** | `{result['is_private']}` |
+                    """)
+            else:
+                st.error(result["error"])
+
+    elif mode == "IP Info":
+        ip = st.text_input("IP Address", "192.168.1.1", key="ip_info")
+        if st.button("Analyze", type="primary", key="ip_analyze"):
+            result = get_ip_info(ip)
+            if result["status"] == "success":
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown(f"""
+                    | Property | Value |
+                    |----------|-------|
+                    | **IP** | `{result['ip']}` |
+                    | **Version** | IPv{result['version']} |
+                    | **Private** | {result['is_private']} |
+                    | **Global** | {result['is_global']} |
+                    | **Loopback** | {result['is_loopback']} |
+                    | **Multicast** | {result['is_multicast']} |
+                    """)
+                with col2:
+                    st.code(result["binary"], language=None)
+                    st.caption("Binary representation")
+                    st.code(result["reverse_pointer"], language=None)
+                    st.caption("Reverse DNS pointer")
+            else:
+                st.error(result["error"])
+
+    elif mode == "IP in Subnet Check":
+        col1, col2 = st.columns(2)
+        ip = col1.text_input("IP Address", "192.168.1.50", key="ip_check")
+        cidr = col2.text_input("Subnet CIDR", "192.168.1.0/24", key="cidr_check")
+        if st.button("Check", type="primary", key="ip_subnet_check"):
+            result = check_ip_in_subnet(ip, cidr)
+            if result["status"] == "success":
+                if result["belongs"]:
+                    st.success(f"`{ip}` belongs to subnet `{result['subnet']}`")
+                else:
+                    st.error(f"`{ip}` does NOT belong to subnet `{result['subnet']}`")
+            else:
+                st.error(result["error"])
+
+    elif mode == "Subnet Splitter":
+        col1, col2 = st.columns(2)
+        cidr = col1.text_input("CIDR to Split", "10.0.0.0/16", key="split_cidr")
+        new_prefix = col2.number_input("New Prefix Length", 1, 32, 24, key="split_prefix")
+        if st.button("Split Subnet", type="primary", key="split_btn"):
+            result = split_subnet(cidr, new_prefix)
+            if result["status"] == "success":
+                st.info(f"Split `{result['original']}` into **{result['num_subnets']}** /{new_prefix} subnets")
+                df = pd.DataFrame(result["subnets"])
+                st.dataframe(df, use_container_width=True, height=400)
+            else:
+                st.error(result["error"])
+
+
 def main():
     render_header()
 
@@ -246,7 +334,7 @@ def main():
     with tab3:
         render_http_tab()
     with tab4:
-        st.subheader("Subnet Calculator")
+        render_subnet_tab()
     with tab5:
         st.subheader("Traceroute & Ping")
 
