@@ -8,12 +8,13 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from core.dns_analyzer import resolve_dns, full_dns_report, reverse_lookup, compare_dns_servers, RECORD_TYPES
+from core.traceroute import traceroute, ping
 from core.subnet_calc import calculate_subnet, get_ip_info, check_ip_in_subnet, split_subnet
 from core.http_monitor import check_endpoint, get_response_headers_analysis
 from core.port_scanner import scan_ports, resolve_host, COMMON_PORTS, TOP_100_PORTS
 from utils.visualize import (
     plot_port_scan_results, plot_port_summary, plot_dns_comparison,
-    plot_security_score,
+    plot_traceroute, plot_ping_results, plot_security_score,
 )
 
 st.set_page_config(
@@ -316,6 +317,65 @@ def render_subnet_tab():
                 st.error(result["error"])
 
 
+def render_traceroute_tab():
+    st.subheader("Traceroute & Ping")
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        host = st.text_input("Target Host", "google.com", key="trace_host")
+    with col2:
+        mode = st.selectbox("Mode", ["Ping", "Traceroute"])
+
+    if mode == "Ping":
+        count = st.slider("Probe Count", 1, 10, 4, key="ping_count")
+        if st.button("Ping", type="primary", key="ping_btn"):
+            with st.spinner(f"Pinging {host}..."):
+                result = ping(host, count=count)
+
+            if result["status"] == "reachable":
+                st.success(f"**{host}** ({result['ip']}) is reachable via port {result['port']}")
+
+                m1, m2, m3, m4 = st.columns(4)
+                m1.metric("Min RTT", f"{result['min_ms']}ms")
+                m2.metric("Avg RTT", f"{result['avg_ms']}ms")
+                m3.metric("Max RTT", f"{result['max_ms']}ms")
+                m4.metric("Packet Loss", result['packet_loss'])
+
+                fig = plot_ping_results(result)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.error(f"**{host}** is unreachable")
+
+    elif mode == "Traceroute":
+        max_hops = st.slider("Max Hops", 5, 30, 20, key="trace_hops")
+        if st.button("Trace Route", type="primary", key="trace_btn"):
+            with st.spinner(f"Tracing route to {host} (max {max_hops} hops)..."):
+                result = traceroute(host, max_hops=max_hops)
+
+            if result["status"] == "success":
+                if result["reached"]:
+                    st.success(f"Reached **{host}** in {result['total_hops']} hops")
+                else:
+                    st.warning(f"Did not reach destination within {max_hops} hops")
+
+                hop_data = []
+                for h in result["hops"]:
+                    hop_data.append({
+                        "Hop": h["ttl"],
+                        "IP": h["ip"],
+                        "Hostname": h["hostname"],
+                        "RTT (ms)": h["rtt_ms"] if h["rtt_ms"] else "* (timeout)",
+                    })
+                st.dataframe(pd.DataFrame(hop_data), use_container_width=True)
+
+                fig = plot_traceroute(result["hops"])
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.error(result.get("error", "Traceroute failed"))
+
+
 def main():
     render_header()
 
@@ -336,7 +396,7 @@ def main():
     with tab4:
         render_subnet_tab()
     with tab5:
-        st.subheader("Traceroute & Ping")
+        render_traceroute_tab()
 
     st.divider()
     st.caption("NetProbe v1.0 | Network Analysis & Monitoring Toolkit")
