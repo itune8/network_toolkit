@@ -2,6 +2,7 @@
 
 import streamlit as st
 import pandas as pd
+import socket
 import os
 import sys
 
