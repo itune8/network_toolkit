@@ -114,3 +114,4 @@ def supernet(cidr, new_prefix):
         }
     except ValueError as e:
         return {"status": "error", "error": str(e)}
+
