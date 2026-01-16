@@ -170,3 +170,4 @@ def ping(host, count=4, timeout=2):
         "avg_ms": best["avg_ms"],
         "rtts": best["rtts"],
     }
+
