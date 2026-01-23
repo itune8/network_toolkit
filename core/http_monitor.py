@@ -150,4 +150,3 @@ def get_response_headers_analysis(headers):
 
     return {"headers": security_headers, "score": score,
             "present": present_count, "total": total}
-
