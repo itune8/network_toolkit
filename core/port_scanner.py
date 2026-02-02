@@ -113,4 +113,3 @@ def resolve_host(host):
         return ip
     except socket.gaierror:
         return None
-
