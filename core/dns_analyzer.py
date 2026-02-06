@@ -105,3 +105,4 @@ def compare_dns_servers(domain, servers=None):
             }
 
     return results
+
