@@ -20,3 +20,23 @@ Network Analysis & Monitoring Toolkit — a comprehensive suite of networking to
 pip install -r requirements.txt
 streamlit run app.py
 ```
+
+## Project Structure
+
+```
+networking/
+├── app.py                  # Streamlit web application
+├── core/
+│   ├── dns_analyzer.py     # DNS resolution & analysis
+│   ├── port_scanner.py     # TCP port scanning & banner grabbing
+│   ├── http_monitor.py     # HTTP health checks & SSL validation
+│   ├── subnet_calc.py      # IP/subnet calculations
+│   └── traceroute.py       # Traceroute & ping
+├── utils/
+│   └── visualize.py        # Plotly visualization helpers
+└── requirements.txt
+```
+
+## License
+
+MIT
