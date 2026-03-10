@@ -160,4 +160,3 @@ def plot_security_score(score, present, total):
         height=280,
     )
     return fig
-
