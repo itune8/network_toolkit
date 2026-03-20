@@ -36,8 +36,3 @@ networking/
 │   └── visualize.py        # Plotly visualization helpers
 └── requirements.txt
 ```
-
-## License
-
-MIT
-
